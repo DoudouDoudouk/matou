@@ -1,6 +1,8 @@
 # Matou — Backend Spec (LLM question generator)
 
-The frontend is 100% static except for **one** thing it needs from the backend: generating a **single personalized question** per domain from the user's profile + prior answers. Everything else (static questions, tools, map, scoring, XP) lives in the frontend. Build this one endpoint and we're done.
+> **Hybrid alignment** (see `HYBRID.md`): `domain` here = a **theme** (`revenu`/`budget`/`impots`/`investissement`). `profile` values must be **bands/categories only** (e.g. income-bracket `b1`–`b5`), never exact amounts — pass the band, not the salary. Everything else below is unchanged; this endpoint is the one live-LLM (✨) part of the hybrid build.
+
+The frontend is 100% static except for **one** thing it needs from the backend: generating a **single personalized question** per domain (theme) from the user's profile + prior answers. Everything else (static questions, tools, map, scoring, XP) lives in the frontend. Build this one endpoint and we're done.
 
 Frontend seam it plugs into: `services/llm.js → generateQuestion(domain, answers, profile)` (see `round4-questions.html`, questions tagged `source:'llm'`). It's called once per domain, after the static questions, while a "Matou réfléchit ✨" screen shows (~1.2s budget).
 

@@ -45,6 +45,11 @@ npx netlify deploy --prod
 - **Now:** clickable prototypes (design converged).
 - **Next:** React app (Vite + React + Zustand + persist) — closed loop, saved progress, LLM connected.
 
+## 📐 Plan & specs
+- [`HYBRID.md`](HYBRID.md) — **the reconciled build plan** (Track A's live-LLM feel + borrowed themes/levels/trophies + RGPD posture). Start here.
+- [`BACKEND-SPEC.md`](BACKEND-SPEC.md) — the one backend endpoint (live ✨ question generator, Haiku 4.5).
+- [`specs/`](specs/) — full production design (Elicit / Matou Finance). North star, **not** the 48h build — see [`specs/README.md`](specs/README.md).
+
 ---
 
 Fait avec ❤️ en France 🇫🇷
