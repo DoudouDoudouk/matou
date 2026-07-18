@@ -71,6 +71,9 @@ h1,h2,h3,h4{font-family:"Clash Display","Satoshi",sans-serif;letter-spacing:-.01
 .slwrap .lab{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
 .slwrap .lab .t{font-size:13px;font-weight:700;color:var(--sub)}
 .slwrap .lab .v{font-family:"Clash Display";font-weight:700;font-size:28px}
+.salin{font-family:"Clash Display";font-weight:700;font-size:28px;color:var(--ink);width:9ch;text-align:right;border:none;border-bottom:2px solid var(--teal);background:transparent;padding:0 2px;outline:none;-moz-appearance:textfield}
+.salin::-webkit-outer-spin-button,.salin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.salin:focus{border-bottom-color:var(--pink)}
 input[type=range]{-webkit-appearance:none;width:100%;height:12px;border-radius:12px;background:linear-gradient(90deg,var(--teal) var(--fill,40%),rgba(60,40,90,.1) var(--fill,40%));outline:none}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;box-shadow:0 6px 16px -4px rgba(0,0,0,.35),0 0 0 4px var(--teal);cursor:grab}
 .result{background:linear-gradient(150deg,var(--teal-s),#fff 82%);border-radius:22px;padding:22px;margin-bottom:14px}
@@ -212,7 +215,10 @@ const SCREEN={
    return `<div class="screen tool">
      <span class="tag">${sv(IC.budget,15)} Ton outil · ${s.grossShort} → net</span>
      <h2>Calcule ton net réel</h2><div class="lead">Glisse pour ajuster à ton vrai chiffre — c’est ça, la finance utile.</div>
-     <div class="slwrap"><div class="lab"><span class="t">${s.gross[0].toUpperCase()+s.gross.slice(1)} / mois</span><span class="v" id="gV">${eur(gross)}</span></div>
+     <div class="slwrap">
+       <div class="lab"><span class="t">${s.gross[0].toUpperCase()+s.gross.slice(1)} / an</span><span class="v"><input type="number" id="gY" class="salin" value="${gross*12}" min="${min*12}" max="${max*12}" step="600" inputmode="numeric" aria-label="Montant annuel brut"> €</span></div>
+       <input type="range" id="slY" min="${min*12}" max="${max*12}" step="600" value="${gross*12}" style="--fill:${(gross*12-min*12)/((max-min)*12)*100}%">
+       <div class="lab" style="margin-top:16px"><span class="t">${s.gross[0].toUpperCase()+s.gross.slice(1)} / mois</span><span class="v"><input type="number" id="gM" class="salin" value="${gross}" min="${min}" max="${max}" step="50" inputmode="numeric" aria-label="Montant mensuel brut"> €</span></div>
        <input type="range" id="sl" min="${min}" max="${max}" step="50" value="${gross}" style="--fill:${(gross-min)/(max-min)*100}%"></div>
      <div class="result">
        <div class="netrow"><span class="k">Net dans ta poche / mois</span><span class="net" id="netV">${eur(net)}</span></div>
@@ -239,11 +245,20 @@ const SCREEN={
 
 function pick(k,v){P[k]=v;next();}
 window.pick=pick;
-function wireTool(){const sl=document.getElementById('sl');if(!sl)return;const s=SIT[P.sit],min=+sl.min,max=+sl.max;
- sl.addEventListener('input',e=>{P.amount=+e.target.value;sl.style.setProperty('--fill',((P.amount-min)/(max-min)*100)+'%');
-  const {gross,net,cot,netPct}=calc();
-  gV.textContent=eur(gross);netV.textContent=eur(net);b1.textContent=eur(gross);b2.textContent='−'+eur(cot);b3.textContent=eur(net);
-  document.getElementById('year').textContent=eur(cot*12);netb.style.width=netPct+'%';cotb.style.width=(100-netPct)+'%';});}
+function wireTool(){const sl=document.getElementById('sl');if(!sl)return;
+ const MIN=+sl.min,MAX=+sl.max,AMIN=MIN*12,AMAX=MAX*12,slY=document.getElementById('slY'),gM=document.getElementById('gM'),gY=document.getElementById('gY');
+ // paint() drives both sliders' fills + the net breakdown from a monthly gross.
+ // Net uses the raw value (via calc); each slider only clamps its own thumb to its range.
+ function paint(g){g=Math.max(0,Math.round(g));P.amount=g;
+   const gc=Math.min(MAX,Math.max(MIN,g));sl.value=gc;sl.style.setProperty('--fill',((gc-MIN)/(MAX-MIN)*100)+'%');
+   const yc=Math.min(AMAX,Math.max(AMIN,g*12));slY.value=yc;slY.style.setProperty('--fill',((yc-AMIN)/(AMAX-AMIN)*100)+'%');
+   const {net,cot,netPct}=calc();
+   netV.textContent=eur(net);b1.textContent=eur(g);b2.textContent='−'+eur(cot);b3.textContent=eur(net);
+   document.getElementById('year').textContent=eur(cot*12);netb.style.width=netPct+'%';cotb.style.width=(100-netPct)+'%';return g;}
+ sl.addEventListener('input',e=>{const g=paint(+e.target.value);gM.value=g;gY.value=g*12;});
+ slY.addEventListener('input',e=>{const y=+e.target.value,g=paint(y/12);gM.value=Math.round(g);gY.value=y;});
+ gM.addEventListener('input',e=>{const g=paint(+e.target.value||0);gY.value=Math.round(g*12);});
+ gY.addEventListener('input',e=>{const g=paint((+e.target.value||0)/12);gM.value=Math.round(g);});}
 
 document.getElementById('back').onclick=()=>go(idx-1);
 function replay(){P={sit:'premier',amount:null,pain:'brutnet'};go(0);}
