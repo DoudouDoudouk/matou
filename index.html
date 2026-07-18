@@ -149,6 +149,10 @@ button{font-family:inherit}
 .slwrap .lab{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
 .slwrap .lab .t{font-size:13px;font-weight:700;color:var(--sub)}
 .slwrap .lab .v{font-family:"Clash Display";font-weight:700;font-size:26px}
+.salin{font-family:"Clash Display";font-weight:700;font-size:26px;color:var(--ink);width:9ch;text-align:right;border:none;border-bottom:2px solid var(--teal);background:transparent;padding:0 2px;outline:none;-moz-appearance:textfield}
+.salin::-webkit-outer-spin-button,.salin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.salin:focus{border-bottom-color:var(--pink)}
+.salin.small{width:7.4ch}
 input[type=range]{-webkit-appearance:none;width:100%;height:12px;border-radius:12px;background:linear-gradient(90deg,var(--teal) var(--fill,40%),rgba(60,40,90,.1) var(--fill,40%));outline:none}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;box-shadow:0 6px 16px -4px rgba(0,0,0,.35),0 0 0 4px var(--teal);cursor:grab}
 .result{background:linear-gradient(150deg,var(--teal-s),#fff 82%);border-radius:18px;padding:18px;margin-bottom:12px}
@@ -426,16 +430,28 @@ window.pick=pick;window.reveal=reveal;window.lessonNext=lessonNext;window.L=L;wi
 function toolBody(t){const gross=S.profile.income?BAND_MID[S.profile.income]:2100;const net=Math.round(gross*(1-RATE)),cot=gross-net;
  return `<div class="qhead" style="margin-top:4px">${cat(42)}<div class="who"><span class="d"></span>Outil · brut→net</div></div>
   <div class="qbubble">Calcule ton net réel — glisse ton salaire brut.</div>
-  <div class="slwrap"><div class="lab"><span class="t">Salaire brut / mois</span><span class="v" id="gV">${eur(gross)}</span></div>
-   <input type="range" id="sl" min="1200" max="5000" step="50" value="${gross}" style="--fill:${(gross-1200)/3800*100}%"></div>
+  <div class="slwrap"><div class="lab"><span class="t">Salaire annuel brut</span><span class="v"><input type="number" id="gY" class="salin" value="${gross*12}" min="14400" max="120000" step="600" inputmode="numeric" aria-label="Salaire annuel brut"> €</span></div>
+   <input type="range" id="slY" min="14400" max="120000" step="600" value="${gross*12}" style="--fill:${(gross*12-14400)/105600*100}%">
+   <div class="lab" style="margin-top:14px"><span class="t">Salaire mensuel brut</span><span class="v"><input type="number" id="gM" class="salin small" value="${gross}" min="1200" max="10000" step="50" inputmode="numeric" aria-label="Salaire mensuel brut"> €</span></div>
+   <input type="range" id="sl" min="1200" max="10000" step="50" value="${gross}" style="--fill:${(gross-1200)/8800*100}%"></div>
   <div class="result"><div style="font-size:13px;color:var(--sub);font-weight:700">Net dans ta poche / mois</div><div class="net" id="netV">${eur(net)}</div>
    <div class="row cot"><span>− Cotisations (−21,8 %)</span><span class="v" id="cotV">−${eur(cot)}</span></div>
    <div class="row"><span>= Net réel</span><span class="v" id="netR">${eur(net)}</span></div></div>
   <div class="rgpd">💡 Ton chiffre reste ici, il n’est pas enregistré (on ne garde qu’une bande).</div>
   <div class="spacer"></div><button class="btn block" onclick="L.correct=L.items.length;finishLevel()">J’ai compris ${sv('check',18)}</button>`;
 }
-function wireTool(t){const sl=$('sl');if(!sl)return;sl.addEventListener('input',e=>{const g=+e.target.value;sl.style.setProperty('--fill',(g-1200)/3800*100+'%');
-  const net=Math.round(g*(1-RATE)),cot=g-net;$('gV').textContent=eur(g);$('netV').textContent=eur(net);$('cotV').textContent='−'+eur(cot);$('netR').textContent=eur(net);});}
+function wireTool(t){const sl=$('sl');if(!sl)return;const MIN=1200,MAX=10000,AMIN=MIN*12,AMAX=MAX*12,slY=$('slY'),gM=$('gM'),gY=$('gY');
+  // paint() drives both sliders' fills + the net breakdown from a monthly gross.
+  // Net uses the raw value; each slider only clamps its own thumb to its range.
+  function paint(g){g=Math.max(0,Math.round(g));
+    const gc=Math.min(MAX,Math.max(MIN,g));sl.value=gc;sl.style.setProperty('--fill',(gc-MIN)/(MAX-MIN)*100+'%');
+    const yc=Math.min(AMAX,Math.max(AMIN,g*12));slY.value=yc;slY.style.setProperty('--fill',(yc-AMIN)/(AMAX-AMIN)*100+'%');
+    const net=Math.round(g*(1-RATE)),cot=g-net;
+    $('netV').textContent=eur(net);$('cotV').textContent='−'+eur(cot);$('netR').textContent=eur(net);return g;}
+  sl.addEventListener('input',e=>{const g=paint(+e.target.value);gM.value=g;gY.value=g*12;});
+  slY.addEventListener('input',e=>{const y=+e.target.value,g=paint(y/12);gM.value=Math.round(g);gY.value=y;});
+  gM.addEventListener('input',e=>{const g=paint(+e.target.value||0);gY.value=Math.round(g*12);});
+  gY.addEventListener('input',e=>{const g=paint((+e.target.value||0)/12);gM.value=Math.round(g);});}
 
 /* ============ FINISH LEVEL → reward / retry ============ */
 function finishLevel(){
