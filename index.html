@@ -192,6 +192,13 @@ const flag=`<span class="flag"><i></i><i></i><i></i></span>`;
 // Mistral attribution mark (their sunset palette) — this is a Mistral hackathon
 const mistralMark=`<svg width="19" height="14" viewBox="0 0 20 15" style="vertical-align:-2px;border-radius:2px"><rect y="0" width="20" height="3" fill="#FFD800"/><rect y="3" width="20" height="3" fill="#FFAF00"/><rect y="6" width="20" height="3" fill="#FF8205"/><rect y="9" width="20" height="3" fill="#FA500F"/><rect y="12" width="20" height="3" fill="#E10500"/></svg>`;
 const mistral=`<span style="display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--ink)">${mistralMark} Mistral</span>`;
+const BUILD_DATE='18 juillet 2026';
+// Signature strip — our differentiator + hackathon build-date credit
+const signature=`<div style="display:flex;align-items:center;gap:11px;background:linear-gradient(120deg,#FFF4E0,#FFE9F4);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:16px;box-shadow:var(--sh-sm)">
+  <span style="font-size:20px">✨</span>
+  <span style="flex:1;font-size:12.5px;font-weight:700;line-height:1.4">Chaque leçon est <b>générée en direct par ${mistral}</b> — pas un quiz figé, une app qui s’adapte à toi.<br>
+  <span style="color:var(--faint);font-weight:600">🗓️ Code 100% original, créé le ${BUILD_DATE} · Hackathon Mistral 🇫🇷</span></span>
+</div>`;
 const $=id=>document.getElementById(id);
 
 /* ============ CONTENT (hybrid: themes → levels → items) ============ */
@@ -284,10 +291,12 @@ function renderOnboarding(){
  if(ob.step===-1){ // intro
   $('app').innerHTML=`<div class="center"><span class="pill" style="align-self:center">🧭 Faisons connaissance</span>${cat(116)}
    <h1>Apprends l’argent,<br><em>un geste par jour.</em></h1>
-   <p>Matou te pose 4 questions rapides pour ne t’enseigner que l’utile. Que des bandes, jamais tes montants exacts.</p>
+   <p>Pas un quiz figé : Matou te pose des questions, puis <b>génère ta leçon en direct avec Mistral</b>. Une app qui s’adapte à toi.</p>
    <button class="btn" onclick="ob.step=0;ob.tmp=null;renderOnboarding()">Commencer ${sv('play',18)}</button>
    <div class="rgpd" style="max-width:34ch">🔒 Tes réponses restent sur ton appareil. ${DISCLAIMER}</div>
-   <div style="margin-top:14px;font-size:12px;color:var(--faint);display:inline-flex;align-items:center;gap:6px;font-weight:700">Propulsé par ${mistral}</div></div>`;
+   <div style="margin-top:14px;font-size:12px;color:var(--faint);display:flex;flex-direction:column;gap:4px;align-items:center;font-weight:700">
+     <span style="display:inline-flex;align-items:center;gap:6px">Propulsé par ${mistral}</span>
+     <span>🗓️ Code original créé le ${BUILD_DATE} · Hackathon Mistral 🇫🇷</span></div></div>`;
   return;
  }
  const q=ONB[ob.step];const n=ONB.length;
@@ -347,7 +356,8 @@ function renderMap(){
  const name=S.profile.sit||'toi';
  let out=topbar()+`<div class="view">
   <div class="hero"><div class="t"><div class="kick">Ton ascension</div><h2>Bonjour 👋</h2>
-    <div class="bar" style="--accent:var(--pink)"><span style="width:${(S.stats.xp%300)/300*100}%"></span></div></div><div>${cat(72)}</div></div>`;
+    <div class="bar" style="--accent:var(--pink)"><span style="width:${(S.stats.xp%300)/300*100}%"></span></div></div><div>${cat(72)}</div></div>
+  ${signature}`;
  THEMES.forEach((t,i)=>{ out+=mountainBlock(t);
    if(i<THEMES.length-1){const nx=THEMES[i+1];out+=`<div class="valley"><span class="lk">${themeUnlocked(nx)?'⛰️ prochaine montagne':sv('lock',13)+' '+nx.name+' — gagne le trophée '+(THEMES.find(x=>x.id===nx.prereq)?.emoji||'')}</span></div>`;}
  });
