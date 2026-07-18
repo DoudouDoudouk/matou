@@ -114,7 +114,7 @@ button{font-family:inherit}
 .nd .b{width:var(--sz,68px);height:var(--sz,68px);margin:0 auto;border-radius:50%;display:grid;place-items:center;background:var(--card);box-shadow:var(--sh-sm);color:var(--faint);position:relative;transition:transform .2s var(--ease)}
 .nd .b .icn{width:calc(var(--sz,68px)*.4);height:calc(var(--sz,68px)*.4)}
 .nd:hover .b{transform:translateY(-3px)}
-.nd.done .b{background:var(--accent-s);color:var(--accent)}
+.nd.done .b{background:#DDF6E8;color:var(--green);box-shadow:0 0 0 3px rgba(18,183,106,.25),var(--sh-sm)}
 .nd.cur .b{background:linear-gradient(140deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#fff));color:#fff;box-shadow:0 0 0 7px var(--accent-s),0 16px 30px -10px var(--accent);animation:pp 2.4s var(--ease) infinite}
 @keyframes pp{50%{box-shadow:0 0 0 13px transparent,0 16px 30px -10px var(--accent)}}
 .nd.lock{opacity:.55;cursor:not-allowed}.nd.lock:hover .b{transform:none}
@@ -337,7 +337,8 @@ function mountainBlock(t){
  const active=themeUnlocked(t);const k=t.levels.length;const H=190+k*118;const top=100,base=H-92;
  const xs=[36,64,34,66];
  const curIdx=currentLevelIdx(t);
- const pts=t.levels.map((l,i)=>[(i===k-1?50:xs[i%4]),base-(base-top)*(i/Math.max(1,k-1))]);
+ const SUMMIT_DROP=44; // décale le nœud du sommet vers le bas pour le dégager sous le drapeau 🚩
+ const pts=t.levels.map((l,i)=>{const x=(i===k-1?50:xs[i%4]);let y=base-(base-top)*(i/Math.max(1,k-1));if(i===k-1&&k>1)y+=SUMMIT_DROP;return [x,y];});
  const silo=`<svg class="silo" viewBox="0 0 100 ${H}" preserveAspectRatio="none">
    <polygon points="0,${H} 26,${top+120} 50,${top-6} 74,${top+120} 100,${H}" fill="${t.soft}"/>
    <polygon points="0,${H} 40,${base-40} 50,${top-6} 60,${base-40} 100,${H}" fill="${t.color}" fill-opacity=".14"/>
@@ -347,7 +348,7 @@ function mountainBlock(t){
    const done=levelDone(t,l);const cur=active&&i===curIdx;const st=done?'done':cur?'cur':'lock';
    const boss=i===k-1;const ic=done?'check':st==='lock'?'lock':l.tool?'star':boss?'trophy':t.ic;
    const click=(active&&(done||cur))?`onclick="go('lesson',{t:'${t.id}',l:'${l.id}'})"`:'';
-   return `<div class="nd ${st} ${boss?'boss':''}" style="left:${pts[i][0]}%;top:${pts[i][1]}px" ${click}>
+   return `<div class="nd ${st} ${boss?'boss':''}" id="nd-${t.id}-${l.id}" style="left:${pts[i][0]}%;top:${pts[i][1]}px" ${click}>
      <div class="b">${sv(ic, boss?32:26)}${cur?`<span class="catn">${cat(44)}</span>`:''}</div><div class="lb">${l.title}</div></div>`;
  }).join('');
  const {d,tot,pc}=themeProgress(t);
@@ -368,6 +369,9 @@ function renderMap(){
  out+=`<div class="foot">Fait avec <span class="h">❤</span> en FRANCE ${flag} · Propulsé par ${mistral}</div></div>`;
  $('app').innerHTML=out;
 }
+// Retour carte + défilement vers un nœud précis (pour voir le badge vert après validation).
+function focusMap(tid,lid){go('map');setTimeout(()=>{const el=document.getElementById('nd-'+tid+'-'+lid);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},60);}
+window.focusMap=focusMap;
 
 /* ============ THEME view = redirect straight into current level (map handles nodes) ============ */
 function renderTheme(){go('map');}
@@ -479,7 +483,7 @@ function finishLevel(){
     <div class="gpill xp"><div class="n">+${firstTime?80:0}</div><div class="l">XP</div></div>
     <div class="gpill coin"><div class="n">+${firstTime?20:0}${newTrophy?'+100':''}</div><div class="l">PIÈCES</div></div>
     <div class="gpill streak"><div class="n">${S.stats.streak}</div><div class="l">JOURS 🔥</div></div></div>
-   <button class="btn block" onclick="L=null;go('map')">Continuer l’ascension ${sv('arrow',18)}</button></div></div>`;
+   <button class="btn block" onclick="L=null;focusMap('${t.id}','${l.id}')">Continuer l’ascension ${sv('arrow',18)}</button></div></div>`;
 }
 window.finishLevel=finishLevel;
 
