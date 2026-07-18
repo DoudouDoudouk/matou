@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matou · Round 2 — Sentier (map shapes)</title>
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F5FF; --card:#FFFFFF; --ink:#241C33; --sub:#7C7594; --faint:#ACA6C0;
+  --pink:#FF6FB0; --pink-s:#FFE1EF; --teal:#12BCB0; --teal-s:#D3F6F1;
+  --lilac:#8B7CF6; --lilac-s:#EAE4FF; --amber:#F5A524; --amber-s:#FFEFCF;
+  --line:rgba(60,40,90,.09); --sh:0 18px 40px -20px rgba(110,80,170,.45);
+  --sh-sm:0 8px 20px -12px rgba(110,80,170,.4);
+  --r:24px; --ease:cubic-bezier(.22,1,.36,1);
+  --accent:var(--pink); --accent-s:var(--pink-s);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:radial-gradient(700px 460px at 88% -6%,var(--teal-s),transparent 62%),radial-gradient(680px 460px at 4% 106%,var(--pink-s),transparent 60%),radial-gradient(600px 500px at 100% 100%,var(--lilac-s),transparent 60%),var(--bg);
+  color:var(--ink);font-family:"Satoshi",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3,h4{font-family:"Clash Display","Satoshi",sans-serif;letter-spacing:-.015em}
+::selection{background:var(--pink);color:#fff}
+.icn{width:24px;height:24px;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.flag{width:15px;height:11px;border-radius:2px;overflow:hidden;display:inline-grid;grid-template-columns:1fr 1fr 1fr;box-shadow:0 0 0 1px var(--line);vertical-align:middle}
+.flag i{display:block}.flag i:nth-child(1){background:#2b4bd6}.flag i:nth-child(2){background:#fff}.flag i:nth-child(3){background:#e0233a}
+.chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 13px;border-radius:12px;background:var(--card);box-shadow:var(--sh-sm);font-size:13.5px;font-weight:700}
+.chip .icn{width:16px;height:16px}
+.chip.flame{color:#F2711C}.chip.flame .icn{stroke:#F2711C}
+.chip.coin{color:#C98A00}.chip.coin .icn{stroke:var(--amber)}
+.ring{position:relative;display:grid;place-items:center;border-radius:50%;background:conic-gradient(var(--accent) calc(var(--p,60)*1%),rgba(60,40,90,.09) 0)}
+.ring::before{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--card)}
+.ring b{position:relative;z-index:1;font-family:"Clash Display";font-size:12px}
+.bar{height:10px;border-radius:10px;background:rgba(60,40,90,.09);overflow:hidden}
+.bar>span{display:block;height:100%;border-radius:10px;background:linear-gradient(90deg,var(--pink),#ff97c9)}
+.cat .fur{fill:#fff;stroke:var(--accent);stroke-width:2.6}.cat .ear{fill:var(--accent)}.cat .in{fill:var(--pink-s)}
+.cat .eye{stroke:var(--ink);stroke-width:2.8;fill:none;stroke-linecap:round}.cat .blush{fill:var(--pink);opacity:.5}.cat .nose{fill:var(--pink)}.cat .wh{stroke:var(--faint);stroke-width:1.7;stroke-linecap:round}
+.cat{filter:drop-shadow(0 10px 18px rgba(150,110,190,.4))}
+.foot{color:var(--faint);font-size:12.5px;display:flex;gap:8px;justify-content:center;align-items:center;padding:24px 0 6px}
+.foot .h{color:var(--pink)}
+
+#app{min-height:100vh;opacity:0;animation:in .55s var(--ease) forwards}
+@keyframes in{to{opacity:1}}
+.mapview{max-width:680px;margin:0 auto;padding:20px 18px 30px;position:relative}
+.wordmark{display:flex;align-items:center;gap:9px;font-family:"Clash Display";font-weight:700;font-size:19px}
+.wordmark .dot{width:26px;height:26px;border-radius:9px;background:linear-gradient(135deg,var(--pink),var(--amber));display:grid;place-items:center;font-size:15px;box-shadow:var(--sh-sm)}
+.shead{position:sticky;top:12px;z-index:6;background:rgba(255,255,255,.82);backdrop-filter:blur(14px);border-radius:20px;padding:13px 16px;box-shadow:var(--sh-sm);margin-bottom:14px}
+.shead .top{display:flex;align-items:center;gap:12px}
+.shead .ring{width:44px;height:44px;--accent:var(--pink)}
+.shead .col{flex:1}.shead .col .l{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);margin-bottom:6px;font-weight:600}
+.legend{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:20px;font-size:11.5px;color:var(--sub);font-weight:600}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .k{width:16px;height:16px;border-radius:50%;background:var(--card);box-shadow:var(--sh-sm);display:grid;place-items:center;font-size:9px}
+.legend .k.tool{border-radius:5px;color:#fff;background:var(--amber)}
+.legend .k.boss{color:#fff;background:var(--lilac)}
+.legend .k.done{background:var(--teal-s);color:var(--teal)}
+
+/* ---- NODE (shared) ---- */
+.rg-pink{--accent:var(--pink);--accent-s:var(--pink-s)}.rg-teal{--accent:var(--teal);--accent-s:var(--teal-s)}
+.rg-amber{--accent:var(--amber);--accent-s:var(--amber-s)}.rg-lilac{--accent:var(--lilac);--accent-s:var(--lilac-s)}
+.nd{position:absolute;transform:translate(-50%,-50%);text-align:center;width:112px;z-index:2}
+.nd .b{width:var(--sz,74px);height:var(--sz,74px);margin:0 auto;border-radius:50%;display:grid;place-items:center;background:var(--card);box-shadow:var(--sh-sm);color:var(--faint);position:relative;transition:transform .25s var(--ease)}
+.nd .b .icn{width:calc(var(--sz,74px)*.4);height:calc(var(--sz,74px)*.4)}
+.nd:hover .b{transform:translateY(-3px)}
+.nd.ty-tool .b{border-radius:22px}
+.nd.done .b{background:var(--accent-s);color:var(--accent)}
+.nd.cur .b{background:linear-gradient(140deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#fff));color:#fff;box-shadow:0 0 0 7px var(--accent-s),0 16px 30px -10px var(--accent);animation:pp 2.4s var(--ease) infinite}
+@keyframes pp{50%{box-shadow:0 0 0 14px transparent,0 16px 30px -10px var(--accent)}}
+.nd.lock{opacity:.55;filter:saturate(.55)}
+.nd .lb{margin-top:9px;font-size:11.5px;font-weight:700;color:var(--sub);line-height:1.2}
+.nd.cur .lb{color:var(--ink)}
+.nd .starbadge{position:absolute;top:-7px;right:-7px;width:22px;height:22px;background:var(--amber);color:#fff;border-radius:50%;display:grid;place-items:center;font-size:11px;box-shadow:0 5px 12px -3px var(--amber);z-index:3}
+.nd .crown{position:absolute;top:-16px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10.5px;font-weight:800;color:#fff;background:var(--lilac);padding:3px 9px;border-radius:9px;box-shadow:0 8px 16px -5px var(--lilac);z-index:3}
+.nd .catn{position:absolute;left:calc(100% - 4px);top:-8px}
+.conn{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:1}
+.rgtag{position:absolute;transform:translateY(-50%);font-size:11px;font-weight:800;letter-spacing:.03em;color:var(--accent);background:var(--accent-s);padding:5px 11px;border-radius:20px;z-index:2;white-space:nowrap}
+
+/* ---- V2 metro legend ---- */
+.metlines{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;font-size:11.5px;font-weight:700}
+.metlines b{display:inline-flex;align-items:center;gap:6px;color:var(--sub)}
+.metlines b i{width:22px;height:6px;border-radius:6px;display:inline-block}
+/* ---- V4 island ---- */
+.isle{position:absolute;transform:translate(-50%,-50%);width:230px;border-radius:30px;padding:20px;z-index:2;text-align:center;
+  background:linear-gradient(150deg,var(--accent-s),#fff 80%);box-shadow:var(--sh);transition:transform .3s var(--ease)}
+.isle:hover{transform:translate(-50%,-50%) translateY(-5px)}
+.isle .em{font-size:30px}.isle h3{font-size:17px;margin:4px 0 3px}
+.isle .p{font-size:12px;color:var(--sub);margin-bottom:12px}
+.isle .dots{display:flex;gap:8px;justify-content:center;margin-bottom:6px}
+.isle .dots i{width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:var(--sh-sm);display:grid;place-items:center;color:var(--accent)}
+.isle .dots i .icn{width:14px;height:14px}
+.isle .dots i.lk{color:var(--faint)}
+.isle.cur{box-shadow:0 0 0 4px var(--accent),var(--sh)}
+.isle.lock{filter:saturate(.5)}.isle.lock .em{opacity:.5}
+.isle .catn{position:absolute;right:-30px;top:-34px}
+.isle .lockbadge{position:absolute;top:12px;right:14px;color:var(--faint)}
+
+/* ---- PICKER ---- */
+#picker{position:fixed;right:22px;bottom:22px;z-index:99;width:270px;background:rgba(255,255,255,.9);backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:20px;box-shadow:0 26px 60px -18px rgba(110,80,170,.5);user-select:none;overflow:hidden}
+#picker .hd{display:flex;align-items:center;gap:8px;padding:12px 15px;cursor:grab;border-bottom:1px solid var(--line);font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--sub)}
+#picker .hd:active{cursor:grabbing}
+#picker .hd .g{display:flex;gap:4px}#picker .hd .g i{width:5px;height:5px;border-radius:50%;background:var(--faint)}
+#picker .bd{padding:15px}
+#picker .cur{display:flex;align-items:baseline;gap:9px;margin-bottom:5px}
+#picker .cur .no{font-family:"Clash Display";font-size:30px;font-weight:700;color:var(--pink)}
+#picker .cur .nm{font-family:"Clash Display";font-size:18px}
+#picker .desc{color:var(--sub);font-size:12.5px;line-height:1.5;min-height:56px;margin-bottom:12px}
+#picker .ctr{display:flex;align-items:center;gap:9px}
+#picker .ctr button{flex:none;width:42px;height:42px;border-radius:13px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;display:grid;place-items:center;transition:.2s;box-shadow:var(--sh-sm)}
+#picker .ctr button:hover{border-color:var(--pink);color:var(--pink)}
+#picker .dots{flex:1;display:flex;gap:6px;justify-content:center}
+#picker .dots i{width:8px;height:8px;border-radius:50%;background:rgba(60,40,90,.15);cursor:pointer;transition:.2s}
+#picker .dots i.on{background:var(--pink);width:22px;border-radius:4px}
+#picker .kbd{text-align:center;color:var(--faint);font-size:10.5px;margin-top:11px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="picker">
+  <div class="hd" id="grab"><span class="g"><i></i><i></i><i></i></span> Round 2 · Forme du Sentier</div>
+  <div class="bd">
+    <div class="cur"><span class="no" id="pNo">1</span><span class="nm" id="pNm">—</span></div>
+    <div class="desc" id="pDesc">—</div>
+    <div class="ctr"><button id="prev"><svg class="icn" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button><div class="dots" id="dots"></div><button id="next"><svg class="icn" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button></div>
+    <div class="kbd">← / →  pour changer de forme</div>
+  </div>
+</div>
+<script>
+const I={
+ wallet:'<rect x="2.5" y="6" width="19" height="12" rx="2.4"/><circle cx="12" cy="12" r="2.4"/><path d="M2.5 10h4M17.5 14h4"/>',
+ budget:'<circle cx="12" cy="12" r="8.2"/><path d="M12 3.8V12l6 5.4"/>',
+ tax:'<rect x="5" y="3" width="14" height="18" rx="2.2"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+ invest:'<path d="M3 17l6-6 4 4 7-7"/><path d="M17 8h4v4"/>',
+ flame:'<path d="M12 3c.6 3 3 4.2 3 7a3 3 0 0 1-6 0c0-.9.4-1.6.9-2.1C9.5 9.5 10 11 11 11.4 10.2 9 11 5.5 12 3z"/><path d="M7.5 13.5A5.5 5.5 0 1 0 17 17c0-2.3-1.4-4-3-5.5"/>',
+ coin:'<circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M9.5 10h3.5a1.5 1.5 0 0 1 0 3H10a1.5 1.5 0 0 0 0 3h3"/>',
+ check:'<path d="M20 6L9 17l-5-5"/>',
+ lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+ star:'<path d="M12 3l2.6 5.6 6 .7-4.4 4.1 1.2 6-5.4-3-5.4 3 1.2-6L3.4 9.3l6-.7z"/>',
+ trophy:'<path d="M7 4h10v3.5a5 5 0 0 1-10 0z"/><path d="M7 5H4v1.5A3.5 3.5 0 0 0 7 10M17 5h3v1.5A3.5 3.5 0 0 1 17 10"/><path d="M12 12v4M8.5 20h7M10 20l.5-4h3l.5 4"/>'
+};
+const svg=(n,c='')=>`<svg class="icn ${c}" viewBox="0 0 24 24">${I[n]}</svg>`;
+function cat(s){return `<svg class="cat" width="${s}" height="${s}" viewBox="0 0 120 120" aria-label="Matou">
+ <path class="ear" d="M26 46 L34 18 L58 40 Z"/><path class="ear" d="M94 46 L86 18 L62 40 Z"/><path class="in" d="M33 40 L38 24 L50 38 Z"/><path class="in" d="M87 40 L82 24 L70 38 Z"/>
+ <path class="fur" d="M60 34 C86 34 98 52 98 74 C98 98 82 108 60 108 C38 108 22 98 22 74 C22 52 34 34 60 34 Z"/>
+ <path class="eye" d="M44 68 q6 8 12 0"/><path class="eye" d="M64 68 q6 8 12 0"/><circle class="blush" cx="40" cy="80" r="6"/><circle class="blush" cx="80" cy="80" r="6"/>
+ <path class="nose" d="M56 78 h8 l-4 5 z"/><path class="wh" d="M30 76 h-14M30 82 h-13"/><path class="wh" d="M90 76 h14M90 82 h13"/></svg>`;}
+
+const U={level:7,xp:2450,max:3000,streak:12,coins:340};
+const xpP=Math.round(U.xp/U.max*100);
+const RGC=['rg-pink','rg-teal','rg-amber','rg-lilac'];
+const RGIC=['wallet','budget','tax','invest'];
+const RGCOL=['#FF6FB0','#12BCB0','#F5A524','#8B7CF6'];
+const RGNAME=['Revenus','Budget','Impôts','Investir'];
+const RGEMO=['💶','🌿','⛰️','🏔️'];
+// flat nodes: r=region, ty=type, st=state
+const N=[
+ {r:0,ty:'lesson',st:'done',t:'Brut & net'},
+ {r:0,ty:'lesson',st:'done',t:'Fiche de paie'},
+ {r:0,ty:'tool',st:'cur',t:'Simu brut→net'},
+ {r:0,ty:'boss',st:'lock',t:'Boss : ta paie',rw:150},
+ {r:1,ty:'lesson',st:'lock',t:'50 / 30 / 20'},
+ {r:1,ty:'tool',st:'lock',t:'Budget auto'},
+ {r:1,ty:'boss',st:'lock',t:'Fonds d’urgence',rw:200},
+ {r:2,ty:'lesson',st:'lock',t:'Tes tranches'},
+ {r:2,ty:'tool',st:'lock',t:'Simu impôt'},
+ {r:3,ty:'lesson',st:'lock',t:'Livret A · 3%'},
+ {r:3,ty:'tool',st:'lock',t:'Intérêts composés'},
+ {r:3,ty:'boss',st:'lock',t:'Sommet : ETF',rw:500},
+];
+const chips=`<span class="chip flame">${svg('flame')} ${U.streak}</span><span class="chip coin">${svg('coin')} ${U.coins}</span>`;
+const flag=`<span class="flag"><i></i><i></i><i></i></span>`;
+const foot=`<div class="foot">Fait avec <span class="h">❤</span> en FRANCE ${flag} · apprends → agis sur ton vrai argent</div>`;
+function head(){return `<div class="shead"><div class="top">
+  <div class="wordmark"><span class="dot">🐱</span>Matou</div>
+  <div class="ring" style="--p:${xpP}"><b>N${U.level}</b></div>
+  <div class="col"><div class="l"><span>Niveau ${U.level}</span><span>${U.xp}/${U.max} XP</span></div><div class="bar"><span style="width:${xpP}%"></span></div></div>
+  ${chips}</div></div>
+  <div class="legend"><span><i class="k done">✓</i> fait</span><span><i class="k">●</i> leçon</span><span><i class="k tool">★</i> outil (ton argent)</span><span><i class="k boss">👑</i> boss / défi</span></div>`;}
+
+function node(n,x,y,scale=1){
+ const ic=n.st==='done'?'check':n.st==='lock'?'lock':n.ty==='boss'?'trophy':n.ty==='tool'?'star':RGIC[n.r];
+ const sz=(n.ty==='boss'?90:74)*scale;
+ return `<div class="nd ${RGC[n.r]} ${n.st} ty-${n.ty}" style="left:${x}%;top:${y}px;--sz:${sz}px">
+   ${n.rw&&n.ty==='boss'?`<span class="crown">👑 +${n.rw}🪙</span>`:''}
+   <div class="b">${n.ty==='tool'&&n.st!=='lock'?'<span class="starbadge">★</span>':''}${svg(ic)}${n.st==='cur'?`<span class="catn">${cat(48)}</span>`:''}</div>
+   <div class="lb">${n.t}</div></div>`;
+}
+function smooth(p){let d=`M ${p[0][0]} ${p[0][1]}`;for(let i=1;i<p.length;i++){const[a,b]=p[i],[pa,pb]=p[i-1],my=(pb+b)/2;d+=` C ${pa} ${my} ${a} ${my} ${a} ${b}`;}return d;}
+function poly(p){return 'M '+p.map(q=>q[0]+' '+q[1]).join(' L ');}
+
+const V=[
+/* 1 · ASCENSION — flowing S-curve climb, region bands */
+{name:'Ascension',desc:'Une courbe fluide qui monte, groupée par régions colorées. Lecture naturelle du bas vers le haut — l’effet Duolingo, en plus doux.',
+render(){
+ const pts=N.map((n,i)=>[50+23*Math.sin(i*0.82),1150-i*94]);
+ const H=1210;
+ const starts=[0,4,7,9]; // region first-node index
+ const tags=starts.map(si=>{const [x,y]=pts[si];const side=x<50?x+16:x-16;return `<div class="rgtag ${RGC[N[si].r]}" style="left:${side}%;top:${y}px">${RGEMO[N[si].r]} ${RGNAME[N[si].r]}</div>`;}).join('');
+ return `<div class="mapview">${head()}
+  <div style="position:relative;height:${H}px">
+   <svg class="conn" viewBox="0 0 100 ${H}" preserveAspectRatio="none"><path d="${smooth(pts)}" fill="none" stroke="rgba(140,110,200,.16)" stroke-width="7" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>
+   ${tags}${N.map((n,i)=>node(n,pts[i][0],pts[i][1])).join('')}
+  </div>${foot}</div>`;}},
+
+/* 2 · MÉTRO — transit map, one colored line per region */
+{name:'Métro',desc:'Plan de métro : une ligne colorée par thème, les stations sont les leçons, les correspondances sont les boss. Familier, très “français”, ultra lisible.',
+render(){
+ const rows=[{y:900,xs:[13,37,61,85],idx:[0,1,2,3]},{y:680,xs:[74,50,26],idx:[4,5,6]},{y:470,xs:[33,58],idx:[7,8]},{y:255,xs:[46,69,90],idx:[9,10,11]}];
+ const H=980;
+ let lines='',conns='';
+ rows.forEach((row,ri)=>{
+   const pts=row.xs.map(x=>[x,row.y]);
+   lines+=`<path d="${poly(pts)}" fill="none" stroke="${RGCOL[ri]}" stroke-width="9" stroke-linecap="round" stroke-opacity=".5" vector-effect="non-scaling-stroke"/>`;
+   if(ri>0){const prev=rows[ri-1];conns+=`<path d="M ${prev.xs[prev.xs.length-1]} ${prev.y} L ${row.xs[0]} ${row.y}" fill="none" stroke="rgba(140,110,200,.22)" stroke-width="4" stroke-dasharray="2 4" vector-effect="non-scaling-stroke"/>`;}
+ });
+ const nodes=rows.flatMap(row=>row.idx.map((ni,k)=>node(N[ni],row.xs[k],row.y,.92))).join('');
+ const leg=RGNAME.map((nm,i)=>`<b><i style="background:${RGCOL[i]}"></i>${nm}</b>`).join('');
+ return `<div class="mapview">${head()}<div class="metlines">${leg}</div>
+  <div style="position:relative;height:${H}px">
+   <svg class="conn" viewBox="0 0 100 ${H}" preserveAspectRatio="none">${conns}${lines}</svg>
+   ${nodes}</div>${foot}</div>`;}},
+
+/* 3 · RAMIFIÉ — branching: after Revenus the path forks, rejoins at Investir */
+{name:'Ramifié',desc:'Un vrai choix : après les Revenus, le chemin se sépare — Budget d’abord, ou Impôts d’abord ? Les deux branches se rejoignent au Sommet. Personnel, pas linéaire.',
+render(){
+ const P=[[50,1090],[50,995],[50,900],[50,808],[29,700],[24,598],[31,500],[72,698],[77,596],[50,405],[50,312],[50,210]];
+ const H=1150;
+ const trunk=smooth([P[0],P[1],P[2],P[3]]);
+ const left=smooth([P[3],P[4],P[5],P[6]]);
+ const right=smooth([P[3],P[7],P[8]]);
+ const cvL=smooth([P[6],P[9]]),cvR=smooth([P[8],P[9]]),topP=smooth([P[9],P[10],P[11]]);
+ const paths=[trunk,left,right,cvL,cvR,topP].map(d=>`<path d="${d}" fill="none" stroke="rgba(140,110,200,.16)" stroke-width="7" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`).join('');
+ return `<div class="mapview">${head()}
+  <div style="position:relative;height:${H}px">
+   <svg class="conn" viewBox="0 0 100 ${H}" preserveAspectRatio="none">${paths}</svg>
+   <div class="rgtag rg-teal" style="left:8%;top:700px">🌿 Budget</div>
+   <div class="rgtag rg-amber" style="left:82%;top:698px">⛰️ Impôts</div>
+   <div class="rgtag rg-pink" style="left:50%;top:760px;transform:translate(-50%,-50%);background:#fff;color:var(--ink);box-shadow:var(--sh-sm)">⇋ à toi de choisir</div>
+   ${N.map((n,i)=>node(n,P[i][0],P[i][1])).join('')}
+  </div>${foot}</div>`;}},
+
+/* 4 · ÎLES — a world of island regions linked by bridges */
+{name:'Îles',desc:'Un archipel : chaque thème est une île qu’on débloque et qu’on visite. Le plus “monde de jeu” — mémorable sur scène, parfait pour le matou explorateur.',
+render(){
+ const isles=[{r:0,x:31,y:1010,st:'cur',done:2,tot:4},{r:1,x:70,y:770,st:'lock',done:0,tot:3},{r:2,x:32,y:520,st:'lock',done:0,tot:2},{r:3,x:66,y:270,st:'lock',done:0,tot:3}];
+ const H=1130;
+ let bridges='';
+ for(let i=1;i<isles.length;i++){bridges+=`<path d="M ${isles[i-1].x} ${isles[i-1].y} L ${isles[i].x} ${isles[i].y}" fill="none" stroke="rgba(140,110,200,.28)" stroke-width="4" stroke-dasharray="1 7" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;}
+ const els=isles.map(is=>{
+   const dots=Array.from({length:is.tot},(_,k)=>`<i class="${k>=is.done?'lk':''}">${svg(k<is.done?'check':is.st==='lock'?'lock':RGIC[is.r])}</i>`).join('');
+   return `<div class="isle ${RGC[is.r]} ${is.st}" style="left:${is.x}%;top:${is.y}px">
+     ${is.st==='lock'?`<span class="lockbadge">${svg('lock')}</span>`:''}
+     ${is.st==='cur'?`<span class="catn">${cat(64)}</span>`:''}
+     <div class="em">${RGEMO[is.r]}</div><h3>Île · ${RGNAME[is.r]}</h3>
+     <div class="p">${is.st==='lock'?'Débloque bientôt':`${is.done}/${is.tot} leçons · en cours`}</div>
+     <div class="dots">${dots}</div></div>`;}).join('');
+ return `<div class="mapview">${head()}
+  <div style="position:relative;height:${H}px">
+   <svg class="conn" viewBox="0 0 100 ${H}" preserveAspectRatio="none">${bridges}</svg>${els}</div>${foot}</div>`;}},
+
+/* 5 · MONTAGNE — altitude switchback up a peak, summit flag */
+{name:'Montagne',desc:'On grimpe un sommet en lacets : chaque palier une altitude, l’objectif = le sommet “Investir” avec son drapeau. La métaphore de la confiance financière qui monte.',
+render(){
+ const xs=[50,74,26,72,28,70,32,66,36,60,44,52];
+ const pts=N.map((n,i)=>[xs[i],1150-i*94]);
+ const H=1210;
+ const mtn=`<polygon points="0,${H} 22,720 40,900 60,540 78,760 100,300 100,${H}" fill="rgba(139,124,246,.07)"/>
+   <polygon points="0,${H} 30,860 52,640 70,880 100,520 100,${H}" fill="rgba(18,188,176,.07)"/>`;
+ const alt=[[0,'0 m · camp de base'],[3,'1 000 m'],[7,'2 000 m'],[11,'Sommet · 3 000 m 🚩']];
+ const altTags=alt.map(([i,t])=>`<div style="position:absolute;left:4%;top:${pts[i][1]}px;transform:translateY(-50%);font-size:11px;font-weight:800;color:var(--faint)">${t}</div>`).join('');
+ return `<div class="mapview">${head()}
+  <div style="position:relative;height:${H}px">
+   <svg class="conn" viewBox="0 0 100 ${H}" preserveAspectRatio="none">${mtn}<path d="${poly(pts)}" fill="none" stroke="rgba(140,110,200,.18)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>
+   ${altTags}${N.map((n,i)=>node(n,pts[i][0],pts[i][1])).join('')}
+  </div>${foot}</div>`;}}
+];
+
+let cur=0;const app=document.getElementById('app'),dw=document.getElementById('dots');
+V.forEach((v,i)=>{const d=document.createElement('i');d.onclick=()=>go(i);dw.appendChild(d);});
+function go(n){cur=(n+V.length)%V.length;const v=V[cur];app.className='v'+(cur+1);
+ app.style.animation='none';app.offsetHeight;app.style.animation='';app.innerHTML=v.render();
+ pNo.textContent=cur+1;pNm.textContent=v.name;pDesc.textContent=v.desc;
+ [...dw.children].forEach((d,i)=>d.classList.toggle('on',i===cur));}
+next.onclick=()=>go(cur+1);prev.onclick=()=>go(cur-1);
+addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(cur+1);if(e.key==='ArrowLeft')go(cur-1);});
+(function(){const p=picker,h=grab;let dx,dy,drag=false;
+ h.addEventListener('pointerdown',e=>{drag=true;const r=p.getBoundingClientRect();dx=e.clientX-r.left;dy=e.clientY-r.top;h.setPointerCapture(e.pointerId);});
+ h.addEventListener('pointermove',e=>{if(!drag)return;p.style.left=(e.clientX-dx)+'px';p.style.top=(e.clientY-dy)+'px';p.style.right='auto';p.style.bottom='auto';});
+ h.addEventListener('pointerup',()=>drag=false);})();
+go(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matou · Round 3 — Moteur adaptatif</title>
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F5FF; --card:#FFFFFF; --ink:#241C33; --sub:#7C7594; --faint:#ACA6C0;
+  --pink:#FF6FB0; --pink-s:#FFE1EF; --teal:#12BCB0; --teal-s:#D3F6F1;
+  --lilac:#8B7CF6; --lilac-s:#EAE4FF; --amber:#F5A524; --amber-s:#FFEFCF;
+  --line:rgba(60,40,90,.09); --sh:0 18px 40px -20px rgba(110,80,170,.45);
+  --sh-sm:0 8px 20px -12px rgba(110,80,170,.4); --ease:cubic-bezier(.22,1,.36,1);
+  --accent:var(--pink); --accent-s:var(--pink-s);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:radial-gradient(700px 460px at 88% -6%,var(--teal-s),transparent 62%),radial-gradient(680px 460px at 4% 106%,var(--pink-s),transparent 60%),var(--bg);
+  color:var(--ink);font-family:"Satoshi",system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;display:grid;place-items:center;padding:24px 0;overflow-x:hidden}
+h1,h2,h3,h4{font-family:"Clash Display","Satoshi",sans-serif;letter-spacing:-.015em}
+::selection{background:var(--pink);color:#fff}
+.icn{width:24px;height:24px;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.cat .fur{fill:#fff;stroke:var(--accent);stroke-width:2.6}.cat .ear{fill:var(--accent)}.cat .in{fill:var(--pink-s)}
+.cat .eye{stroke:var(--ink);stroke-width:2.8;fill:none;stroke-linecap:round}.cat .blush{fill:var(--pink);opacity:.5}.cat .nose{fill:var(--pink)}.cat .wh{stroke:var(--faint);stroke-width:1.7;stroke-linecap:round}
+.cat{filter:drop-shadow(0 10px 18px rgba(150,110,190,.4))}
+
+.phone{width:430px;max-width:94vw;background:var(--card);border-radius:34px;box-shadow:var(--sh);overflow:hidden;position:relative;min-height:730px;display:flex;flex-direction:column}
+.pbar{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line);position:relative;z-index:5}
+.pbar .x{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--bg);color:var(--sub);cursor:pointer;flex:none}
+.pbar .prog{flex:1;height:10px;border-radius:10px;background:rgba(60,40,90,.09);overflow:hidden}
+.pbar .prog span{display:block;height:100%;border-radius:10px;background:linear-gradient(90deg,var(--pink),#ff97c9);transition:width .5s var(--ease)}
+.pbar .hp{display:flex;align-items:center;gap:5px;font-weight:800;font-size:14px;color:#C98A00}
+.pbar .hp .icn{width:16px;height:16px;stroke:var(--amber)}
+.stage{flex:1;position:relative;overflow:hidden}
+.screen{position:absolute;inset:0;padding:24px;display:flex;flex-direction:column;overflow-y:auto;animation:sin .42s var(--ease)}
+@keyframes sin{from{opacity:0;transform:translateX(34px)}to{opacity:1;transform:none}}
+
+.tag{display:inline-flex;align-items:center;gap:7px;align-self:flex-start;font-size:12px;font-weight:800;letter-spacing:.03em;color:var(--accent);background:var(--accent-s);padding:6px 13px;border-radius:20px;margin-bottom:16px}
+.btn{appearance:none;border:0;cursor:pointer;font-family:"Satoshi";font-weight:800;font-size:16px;color:#fff;background:linear-gradient(135deg,var(--pink),#ff97c9);padding:16px;border-radius:16px;box-shadow:0 14px 28px -12px var(--pink);width:100%;display:flex;align-items:center;justify-content:center;gap:9px;transition:transform .2s var(--ease)}
+.btn:hover{transform:translateY(-2px)}
+.btn .icn{width:19px;height:19px;stroke:#fff}
+.spacer{flex:1;min-height:12px}
+
+/* moteur question */
+.qhead{display:flex;gap:12px;align-items:center;margin-bottom:6px}
+.qhead .who{font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--lilac)}
+.qhead .who .d{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--lilac);margin-right:5px;animation:blink 1.4s infinite}
+@keyframes blink{50%{opacity:.3}}
+.qbubble{background:var(--bg);border-radius:6px 20px 20px 20px;padding:16px 18px;font-family:"Clash Display";font-weight:600;font-size:20px;line-height:1.3;margin:6px 0 20px}
+.qopt{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:15px 18px;cursor:pointer;font-family:"Satoshi";font-weight:700;font-size:15.5px;color:var(--ink);transition:.2s;margin-bottom:11px}
+.qopt:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--sh-sm)}
+.qopt .e{font-size:24px;flex:none}
+.qopt .s{font-weight:500;font-size:12.5px;color:var(--sub);display:block;margin-top:1px}
+.qopt .arw{margin-left:auto;color:var(--faint)}
+
+/* synthesis */
+.recap{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.recap b{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;background:var(--bg);padding:7px 12px;border-radius:20px;color:var(--ink)}
+.synthcard{background:linear-gradient(150deg,var(--accent-s),#fff 88%);border-radius:22px;padding:22px;margin-bottom:14px}
+.synthcard h2{font-size:21px;margin-bottom:10px}
+.synthcard p{color:var(--ink);font-size:14.5px;line-height:1.65}
+.synthcard p .hl{background:linear-gradient(transparent 60%,var(--amber-s) 60%);font-weight:700}
+.why{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px;margin-bottom:8px}
+.why .ic{width:38px;height:38px;flex:none;border-radius:11px;display:grid;place-items:center;background:var(--lilac-s);color:var(--lilac)}
+.why p{font-size:13px;color:var(--sub);line-height:1.5}.why b{color:var(--ink)}
+
+/* tool */
+.tool h2{font-size:22px;margin-bottom:4px}.tool .lead{color:var(--sub);font-size:14px;margin-bottom:20px}
+.slwrap{background:var(--bg);border-radius:20px;padding:20px;margin-bottom:16px}
+.slwrap .lab{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+.slwrap .lab .t{font-size:13px;font-weight:700;color:var(--sub)}
+.slwrap .lab .v{font-family:"Clash Display";font-weight:700;font-size:28px}
+input[type=range]{-webkit-appearance:none;width:100%;height:12px;border-radius:12px;background:linear-gradient(90deg,var(--teal) var(--fill,40%),rgba(60,40,90,.1) var(--fill,40%));outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;box-shadow:0 6px 16px -4px rgba(0,0,0,.35),0 0 0 4px var(--teal);cursor:grab}
+.result{background:linear-gradient(150deg,var(--teal-s),#fff 82%);border-radius:22px;padding:22px;margin-bottom:14px}
+.result .netrow{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px}
+.result .netrow .k{font-size:13px;font-weight:700;color:var(--sub)}
+.result .net{font-family:"Clash Display";font-weight:700;font-size:38px;color:#0C9C93;line-height:1}
+.stack{height:26px;border-radius:9px;overflow:hidden;display:flex;margin-bottom:14px;box-shadow:inset 0 0 0 1px var(--line)}
+.stack .net-b{background:linear-gradient(90deg,var(--teal),#3fe0d4);transition:.35s var(--ease)}
+.stack .cot-b{background:repeating-linear-gradient(45deg,var(--pink-s),var(--pink-s) 7px,#ffd0e6 7px,#ffd0e6 14px);transition:.35s var(--ease)}
+.brk{display:flex;flex-direction:column;gap:9px}
+.brk .r{display:flex;justify-content:space-between;font-size:13.5px}
+.brk .r .k{color:var(--sub)}.brk .r .v{font-weight:700}
+.brk .r.cot .v{color:var(--pink)}.brk .r.net .v{color:#0C9C93}
+.brk .r.line{border-top:1px dashed var(--line);padding-top:9px;font-weight:800}
+.hint{font-size:12px;color:var(--faint);margin-top:13px;text-align:center;line-height:1.5}
+
+/* reward */
+.reward{align-items:center;justify-content:center;text-align:center}
+.reward .pop{font-family:"Clash Display";font-weight:700;font-size:28px;margin:16px 0 6px}
+.reward .sub{color:var(--sub);font-size:14.5px;margin-bottom:22px;max-width:32ch}
+.reward .gains{display:flex;gap:12px;margin-bottom:22px}
+.gpill{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 18px;box-shadow:var(--sh-sm)}
+.gpill .n{font-family:"Clash Display";font-weight:700;font-size:23px}
+.gpill.xp .n{color:var(--pink)}.gpill.coin .n{color:#C98A00}.gpill.streak .n{color:#F2711C}
+.gpill .l{font-size:11px;color:var(--sub);font-weight:700}
+.unlocked{display:flex;gap:12px;align-items:center;background:var(--lilac-s);border-radius:16px;padding:14px 16px;width:100%;margin-bottom:8px}
+.unlocked .ic{width:42px;height:42px;flex:none;border-radius:12px;display:grid;place-items:center;background:#fff;color:var(--lilac)}
+.unlocked .t{text-align:left}.unlocked h4{font-size:14px}.unlocked p{font-size:12px;color:var(--sub)}
+.confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:20}
+.cf{position:absolute;width:9px;height:14px;border-radius:2px;will-change:transform;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(770px) rotate(540deg);opacity:.9}}
+
+#picker{position:fixed;right:22px;bottom:22px;z-index:99;width:266px;background:rgba(255,255,255,.9);backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:20px;box-shadow:0 26px 60px -18px rgba(110,80,170,.5);user-select:none;overflow:hidden}
+#picker .hd{display:flex;align-items:center;gap:8px;padding:12px 15px;cursor:grab;border-bottom:1px solid var(--line);font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--sub)}
+#picker .hd:active{cursor:grabbing}#picker .hd .g{display:flex;gap:4px}#picker .hd .g i{width:5px;height:5px;border-radius:50%;background:var(--faint)}
+#picker .bd{padding:15px}
+#picker .cur{display:flex;align-items:baseline;gap:9px;margin-bottom:5px}
+#picker .cur .no{font-size:22px}#picker .cur .nm{font-family:"Clash Display";font-size:16px}
+#picker .desc{color:var(--sub);font-size:12px;line-height:1.5;min-height:52px;margin-bottom:12px}
+#picker .rep{width:100%;padding:11px;border-radius:12px;border:1px solid var(--line);background:#fff;font-weight:800;font-size:13px;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+#picker .rep:hover{border-color:var(--pink);color:var(--pink)}
+#picker .kbd{text-align:center;color:var(--faint);font-size:10.5px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="pbar">
+    <div class="x" id="back"><svg class="icn" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></div>
+    <div class="prog"><span id="prog" style="width:14%"></span></div>
+    <div class="hp"><svg class="icn" viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.4 4.1 1.2 6-5.4-3-5.4 3 1.2-6L3.4 9.3l6-.7z"/></svg><span id="xp">2450</span></div>
+  </div>
+  <div class="stage" id="stage"></div>
+  <div class="confetti" id="cfx"></div>
+</div>
+
+<div id="picker">
+  <div class="hd" id="grab"><span class="g"><i></i><i></i><i></i></span> Moteur adaptatif · aperçu profil</div>
+  <div class="bd">
+    <div class="cur"><span class="no" id="pEmo">🎓</span><span class="nm" id="pNm">—</span></div>
+    <div class="desc" id="pDesc">Le moteur pose 3 questions puis adapte l’explication ET l’outil au profil. ←/→ pour prévisualiser chaque profil.</div>
+    <button class="rep" id="replay"><svg class="icn" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg> Rejouer depuis le début</button>
+    <div class="kbd">← / →  prévisualiser un profil</div>
+  </div>
+</div>
+
+<script>
+function cat(s){return `<svg class="cat" width="${s}" height="${s}" viewBox="0 0 120 120" aria-label="Matou">
+ <path class="ear" d="M26 46 L34 18 L58 40 Z"/><path class="ear" d="M94 46 L86 18 L62 40 Z"/><path class="in" d="M33 40 L38 24 L50 38 Z"/><path class="in" d="M87 40 L82 24 L70 38 Z"/>
+ <path class="fur" d="M60 34 C86 34 98 52 98 74 C98 98 82 108 60 108 C38 108 22 98 22 74 C22 52 34 34 60 34 Z"/>
+ <path class="eye" d="M44 68 q6 8 12 0"/><path class="eye" d="M64 68 q6 8 12 0"/><circle class="blush" cx="40" cy="80" r="6"/><circle class="blush" cx="80" cy="80" r="6"/>
+ <path class="nose" d="M56 78 h8 l-4 5 z"/><path class="wh" d="M30 76 h-14M30 82 h-13"/><path class="wh" d="M90 76 h14M90 82 h13"/></svg>`;}
+const sv=(d,w=24)=>`<svg class="icn" viewBox="0 0 24 24" style="width:${w}px;height:${w}px">${d}</svg>`;
+const IC={wallet:'<rect x="2.5" y="6" width="19" height="12" rx="2.4"/><circle cx="12" cy="12" r="2.4"/><path d="M2.5 10h4M17.5 14h4"/>',
+ doc:'<rect x="5" y="3" width="14" height="18" rx="2.2"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+ budget:'<circle cx="12" cy="12" r="8.2"/><path d="M12 3.8V12l6 5.4"/>',
+ bulb:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 1 4 10.5c-.6.6-1 1.4-1 2.5H9c0-1.1-.4-1.9-1-2.5A6 6 0 0 1 12 3z"/>',
+ play:'<path d="M8 5l11 7-11 7z"/>',arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',check:'<path d="M20 6L9 17l-5-5"/>'};
+const eur=n=>Math.round(n).toLocaleString('fr-FR')+' €';
+
+/* ---------- PROFILE MODEL ---------- */
+const SIT={
+ etudiant:{lab:'Étudiant·e',emo:'🎓',sub:'job ou alternance',gross:'ce que tu gagnes',grossShort:'salaire',rate:.12,charge:'cotisations',amounts:[600,900,1300,1800],def:900,tone:'tu débutes, on va à l’essentiel'},
+ premier:{lab:'Premier salaire',emo:'✨',sub:'je débute la vie active',gross:'ton salaire brut',grossShort:'brut',rate:.218,charge:'cotisations sociales',amounts:[1700,2100,2600,3200],def:2100,tone:'ton tout premier bulletin'},
+ poste:{lab:'En poste',emo:'💼',sub:'je travaille déjà',gross:'ton salaire brut',grossShort:'brut',rate:.23,charge:'cotisations sociales',amounts:[2200,2800,3600,4800],def:2800,tone:'tu veux vérifier tes chiffres'},
+ freelance:{lab:'Freelance / auto-entrepreneur',emo:'🚀',sub:'je facture mes clients',gross:'ton chiffre facturé (HT)',grossShort:'facturé',rate:.22,charge:'charges URSSAF',amounts:[2500,4000,6000,9000],def:4000,tone:'pas d’employeur : l’URSSAF, c’est toi'},
+};
+const PAIN={
+ brutnet:{lab:'La différence brut / net',emo:'🤔',foc:'pourquoi ton brut n’arrive jamais entier'},
+ cotis:{lab:'Où part mon argent',emo:'💸',foc:'à quoi servent les cotisations'},
+ impot:{lab:'L’impôt sur le revenu',emo:'🧾',foc:'brut, net… et l’impôt qui vient après'},
+ tout:{lab:'Tout, un peu 😅',emo:'🌀',foc:'les bases, pas à pas'},
+};
+let P={sit:'premier',amount:null,pain:'brutnet'};
+function A(){return P.amount ?? SIT[P.sit].def;}
+function calc(){const s=SIT[P.sit];const gross=A();const net=Math.round(gross*(1-s.rate));return{gross,net,cot:gross-net,netPct:Math.round((1-s.rate)*100),rate:Math.round(s.rate*1000)/10};}
+
+/* ---------- STEP ENGINE ---------- */
+const steps=['intro','q_sit','q_amount','q_pain','synth','tool','reward'];
+let idx=0;
+const stage=document.getElementById('stage');
+function go(i){idx=Math.max(0,Math.min(steps.length-1,i));render();document.getElementById('prog').style.width=((idx+1)/steps.length*100)+'%';}
+window.next=()=>go(idx+1);
+function render(){stage.innerHTML=SCREEN[steps[idx]]();if(steps[idx]==='tool')wireTool();if(steps[idx]==='reward'){document.getElementById('xp').textContent='2530';burst();}}
+
+const opt=(onclick,emo,lab,sub)=>`<button class="qopt" onclick="${onclick}"><span class="e">${emo}</span><span>${lab}${sub?`<span class="s">${sub}</span>`:''}</span><span class="arw">${sv(IC.arrow,18)}</span></button>`;
+const qhead=q=>`<div class="qhead">${cat(46)}<div class="who"><span class="d"></span>Moteur Matou</div></div><div class="qbubble">${q}</div>`;
+
+const SCREEN={
+ intro:()=>`<div class="screen" style="justify-content:center;text-align:center;align-items:center">
+   <span class="tag" style="align-self:center">💶 Vallée des Revenus</span>${cat(118)}
+   <h2 style="font-size:25px;margin:16px 0 8px">Avant d’expliquer, Matou t’écoute</h2>
+   <p style="color:var(--sub);font-size:15px;max-width:31ch;margin-bottom:8px">3 petites questions pour comprendre <b>ta</b> situation — puis on ne parle que de ce qui te concerne.</p>
+   <div style="display:flex;gap:8px;margin:16px 0 24px">
+     <span class="gpill xp" style="padding:9px 15px"><span class="n" style="font-size:18px">+80</span> <span class="l">XP</span></span>
+     <span class="gpill coin" style="padding:9px 15px"><span class="n" style="font-size:18px">+20</span> <span class="l">🪙</span></span></div>
+   <button class="btn" onclick="next()">C’est parti ${sv(IC.play,18)}</button></div>`,
+
+ q_sit:()=>`<div class="screen">${qhead('Pour commencer — tu es dans quelle situation&nbsp;?')}
+   ${Object.entries(SIT).map(([k,s])=>opt(`pick('sit','${k}')`,s.emo,s.lab,s.sub)).join('')}</div>`,
+
+ q_amount:()=>{const s=SIT[P.sit];return `<div class="screen">${qhead(`Ok&nbsp;! Et ${s.gross} par mois, c’est plutôt&nbsp;?`)}
+   ${s.amounts.map(a=>opt(`pick('amount',${a})`,'💶','≈ '+eur(a),'par mois')).join('')}
+   ${opt(`pick('amount',null)`,'🤷','Aucune idée','on prendra un exemple')}</div>`;},
+
+ q_pain:()=>`<div class="screen">${qhead('Dernière question — qu’est-ce qui t’embrouille le plus&nbsp;?')}
+   ${Object.entries(PAIN).map(([k,p])=>opt(`pick('pain','${k}')`,p.emo,p.lab)).join('')}</div>`,
+
+ synth:()=>{const s=SIT[P.sit],pn=PAIN[P.pain],{rate}=calc();
+   return `<div class="screen">
+     <span class="tag">🧭 Ce que Matou a compris</span>
+     <div class="recap"><b>${s.emo} ${s.lab}</b><b>💶 ${P.amount?'≈ '+eur(P.amount):'exemple'} / mois</b><b>${pn.emo} ${pn.lab}</b></div>
+     <div class="synthcard"><h2>Parfait, on va droit au but 🎯</h2>
+       <p>Comme ${s.tone}, on commence par <span class="hl">${pn.foc}</span>. En clair&nbsp;: ton <b>${s.grossShort}</b> n’arrive jamais entier sur ton compte — environ <b>${rate}%</b> partent en <b>${s.charge}</b>.</p></div>
+     <div class="why"><div class="ic">${sv(IC.bulb,20)}</div><p><b>Pourquoi on te parle de ça&nbsp;?</b> Parce que tu as dit «&nbsp;${pn.lab.toLowerCase()}&nbsp;». On ne t’explique pas une leçon générique — on répond à <b>ta</b> question.</p></div>
+     <div class="spacer"></div>
+     <button class="btn" onclick="next()">Voir sur mon chiffre ${sv(IC.arrow,18)}</button></div>`;},
+
+ tool:()=>{const s=SIT[P.sit],{gross,net,cot,netPct,rate}=calc();const min=s.amounts[0],max=s.amounts[s.amounts.length-1]+1000;
+   return `<div class="screen tool">
+     <span class="tag">${sv(IC.budget,15)} Ton outil · ${s.grossShort} → net</span>
+     <h2>Calcule ton net réel</h2><div class="lead">Glisse pour ajuster à ton vrai chiffre — c’est ça, la finance utile.</div>
+     <div class="slwrap"><div class="lab"><span class="t">${s.gross[0].toUpperCase()+s.gross.slice(1)} / mois</span><span class="v" id="gV">${eur(gross)}</span></div>
+       <input type="range" id="sl" min="${min}" max="${max}" step="50" value="${gross}" style="--fill:${(gross-min)/(max-min)*100}%"></div>
+     <div class="result">
+       <div class="netrow"><span class="k">Net dans ta poche / mois</span><span class="net" id="netV">${eur(net)}</span></div>
+       <div class="stack"><div class="net-b" id="netb" style="width:${netPct}%"></div><div class="cot-b" id="cotb" style="width:${100-netPct}%"></div></div>
+       <div class="brk">
+        <div class="r"><span class="k">${s.grossShort[0].toUpperCase()+s.grossShort.slice(1)}</span><span class="v" id="b1">${eur(gross)}</span></div>
+        <div class="r cot"><span class="k">− ${s.charge} (−${rate}%)</span><span class="v" id="b2">−${eur(cot)}</span></div>
+        <div class="r line net"><span class="k">= Net réel</span><span class="v" id="b3">${eur(net)}</span></div></div>
+       <div class="hint">💡 Sur un an, ~<span id="year">${eur(cot*12)}</span> financent ${P.sit==='freelance'?'ta protection sociale':'ta retraite, ta santé et le chômage'}.</div>
+     </div>
+     <div class="spacer"></div>
+     <button class="btn" onclick="next()">J’ai compris ${sv(IC.check,18)}</button></div>`;},
+
+ reward:()=>{const s=SIT[P.sit];return `<div class="screen reward">${cat(126)}
+   <div class="pop">Bravo, Camille ! 🎉</div>
+   <div class="sub">Tu sais maintenant calculer ton net réel — sur ${s.emo} ta vraie situation.</div>
+   <div class="gains"><div class="gpill xp"><div class="n">+80</div><div class="l">XP</div></div>
+     <div class="gpill coin"><div class="n">+20</div><div class="l">PIÈCES</div></div>
+     <div class="gpill streak"><div class="n">13</div><div class="l">JOURS 🔥</div></div></div>
+   <div class="unlocked"><div class="ic">${sv(IC.doc)}</div><div class="t"><h4>Étape suivante débloquée</h4><p>👑 Boss : décrypte une vraie fiche de paie</p></div></div>
+   <div class="spacer"></div>
+   <button class="btn" onclick="replay()">Continuer l’ascension ${sv(IC.arrow,18)}</button></div>`;},
+};
+
+function pick(k,v){P[k]=v;next();}
+window.pick=pick;
+function wireTool(){const sl=document.getElementById('sl');if(!sl)return;const s=SIT[P.sit],min=+sl.min,max=+sl.max;
+ sl.addEventListener('input',e=>{P.amount=+e.target.value;sl.style.setProperty('--fill',((P.amount-min)/(max-min)*100)+'%');
+  const {gross,net,cot,netPct}=calc();
+  gV.textContent=eur(gross);netV.textContent=eur(net);b1.textContent=eur(gross);b2.textContent='−'+eur(cot);b3.textContent=eur(net);
+  document.getElementById('year').textContent=eur(cot*12);netb.style.width=netPct+'%';cotb.style.width=(100-netPct)+'%';});}
+
+document.getElementById('back').onclick=()=>go(idx-1);
+function replay(){P={sit:'premier',amount:null,pain:'brutnet'};go(0);}
+window.replay=replay;document.getElementById('replay').onclick=replay;
+
+/* confetti */
+function burst(){const box=document.getElementById('cfx');const cols=['#FF6FB0','#12BCB0','#F5A524','#8B7CF6','#ff97c9'];
+ for(let i=0;i<46;i++){const c=document.createElement('div');c.className='cf';
+  c.style.left=(8+(i*83%84))+'%';c.style.top='-20px';c.style.background=cols[i%5];
+  c.style.animationDuration=(1.1+(i%5)*0.25)+'s';c.style.animationDelay=((i%9)*0.04)+'s';
+  c.style.transform='rotate('+((i*40)%360)+'deg)';box.appendChild(c);setTimeout(()=>c.remove(),2400);} }
+
+/* picker: preview a profile → jump to synthesis */
+const SITKEYS=Object.keys(SIT);let pv=1;
+function preview(n){pv=(n+SITKEYS.length)%SITKEYS.length;const k=SITKEYS[pv];const s=SIT[k];
+ P={sit:k,amount:s.def,pain:'brutnet'};
+ document.getElementById('pEmo').textContent=s.emo;document.getElementById('pNm').textContent=s.lab;
+ document.getElementById('pDesc').textContent=`Profil «${s.lab}» → ${s.charge} ≈ ${Math.round(s.rate*100)}%. Le moteur adapte le texte ET l’outil. ←/→ pour comparer.`;
+ go(4);}
+addEventListener('keydown',e=>{if(e.key==='ArrowRight')preview(pv+1);if(e.key==='ArrowLeft')preview(pv-1);});
+(function(){const p=picker,h=grab;let dx,dy,drag=false;
+ h.addEventListener('pointerdown',e=>{drag=true;const r=p.getBoundingClientRect();dx=e.clientX-r.left;dy=e.clientY-r.top;h.setPointerCapture(e.pointerId);});
+ h.addEventListener('pointermove',e=>{if(!drag)return;p.style.left=(e.clientX-dx)+'px';p.style.top=(e.clientY-dy)+'px';p.style.right='auto';p.style.bottom='auto';});
+ h.addEventListener('pointerup',()=>drag=false);})();
+
+go(0);
+</script>
+</body>
+</html>
